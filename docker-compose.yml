@@ -1,0 +1,38 @@
+services:
+  web:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    environment:
+      BACKEND_HOST: backend
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://luma:luma_dev_password@postgres:5432/luma
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: luma
+      POSTGRES_USER: luma
+      POSTGRES_PASSWORD: luma_dev_password
+    volumes:
+      - luma_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U luma -d luma"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  luma_data:
